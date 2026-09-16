@@ -463,11 +463,9 @@
     if (b.dataset.scn === 'modern') {
       setRange('solar', 100); setRange('volc', 0); setRange('basalt', 0); st.land = M.PRESETS.modern.slice(); layoutMask = MODERN_MASK;
       setRange('co2', Math.log10(420));
-      $('speed').value = 'auto';
     } else {
       setRange('solar', 94); setRange('volc', -0.3); setRange('basalt', 7); st.land = M.PRESETS.lowlat.slice(); layoutMask = null;
       setRange('co2', Math.log10(420));
-      $('speed').value = 'auto';
     }
     settingScenario = false;
     mark('data-scn', b.dataset.scn); mark('data-preset', b.dataset.scn === 'modern' ? 'modern' : 'lowlat');
