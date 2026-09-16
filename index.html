@@ -1,0 +1,797 @@
+<title>Snowball Earth Model</title>
+<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["\\[","\\]"]]},svg:{fontCache:"global"}};</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+  :root {
+    --ink: #000000;
+    --muted: #555555;
+    --rule: #CCCCCC;
+    --panel: #F4F4F4;
+    --accent: #1F5FA0;
+    --warm: #B8471F;
+  }
+  body {
+    background: #FFFFFF;
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    padding-block: 1.2rem 2rem;
+    padding-inline: clamp(16px, 3vw, 32px);
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 0.2rem; }
+  h2 { font-size: 0.95rem; margin: 1.1rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  p { margin: 0.3rem 0; }
+  .intro { color: var(--muted); max-width: 80ch; margin-bottom: 1rem; }
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .controls { background: var(--panel); padding: 0.8rem 1rem 1rem; border: 1px solid var(--rule); }
+  .row { display: flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0; flex-wrap: wrap; }
+  .row label { flex: 1 1 8rem; }
+  .row input[type=range] { flex: 2 1 8rem; min-width: 6rem; }
+  .row .val { font-family: Menlo, Consolas, monospace; font-size: 0.85rem; min-width: 5.5rem; text-align: right; }
+  button { font: inherit; padding: 0.3rem 0.7rem; border: 1px solid #333; background: #fff; color: #000; cursor: pointer; }
+  button:hover { background: #eee; }
+  button.selected { background: #000; color: #fff; border-color: #000; }
+  button.selected:hover { background: #333; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  select { font: inherit; padding: 0.25rem; }
+  .btns { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0; }
+  .note { font-size: 0.8rem; color: var(--muted); }
+  ul.plist { padding-left: 1.1rem; margin: 0.3rem 0; } ul.plist li { margin: 0.2rem 0; }
+  details { margin-top: 0.8rem; }
+  summary { cursor: pointer; font-weight: 600; }
+
+  .vis { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "globe tlat" "globe phase" "strip tser"; gap: 1rem; }
+  .g-globe { grid-area: globe; } .g-tlat { grid-area: tlat; } .g-phase { grid-area: phase; } .g-strip { grid-area: strip; } .g-tser { grid-area: tser; }
+  @media (max-width: 1100px) { .vis { grid-template-columns: 1fr; grid-template-areas: "globe" "tlat" "strip" "tser" "phase"; } }
+  .status { font-size: 0.95rem; margin: 0 0 0.8rem; min-height: 2.8em; }
+  .vis figure { margin: 0; }
+  .vis figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+  canvas { width: 100%; height: auto; display: block; border: 1px solid var(--rule); background: #fff; touch-action: none; user-select: none; -webkit-user-select: none; }
+
+  .readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem 1rem; margin-bottom: 1rem; }
+  .readouts div { border-top: 2px solid #000; padding-top: 0.3rem; }
+  .readouts .k { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .readouts .v { font-family: Menlo, Consolas, monospace; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .eqs { max-width: 80ch; margin-top: 2rem; border-top: 1px solid var(--rule); padding-top: 0.5rem; }
+  .eqs p { font-size: 0.9rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.8rem; margin-top: 0.3rem; }
+  .legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; border: 1px solid #999; }
+  .legend .l1::before { background: #B08D57; } .legend .l2::before { background: #F4F6F8; }
+  .legend .l3::before { background: #3D7AB5; } .legend .l4::before { background: #D8E6F0; }
+</style>
+
+<h1>Snowball Earth Model</h1>
+<p class="intro">A latitude-band energy balance model with land and ocean, an ice–albedo feedback, and a slow carbon cycle. It runs continuously. Change the Sun, CO₂, volcanic rate or continents and watch the ice line respond. Drag on the map to redraw coastlines.</p>
+
+<div class="layout">
+  <aside class="controls">
+    <div class="btns">
+      <button id="btnRun">Pause</button>
+      <select id="speed" aria-label="Simulation speed">
+        <option value="auto" selected>Adaptive speed</option>
+        <option value="1">1 year per frame</option>
+        <option value="100">100 years per frame</option>
+        <option value="10000">10,000 years per frame</option>
+        <option value="100000">100,000 years per frame</option>
+        <option value="1000000">1 million years per frame</option>
+      </select>
+    </div>
+    <p class="note">Runs continuously. Current step: <span id="stepVal">—</span>.</p>
+
+    <h2>Scenario</h2>
+    <div class="btns">
+      <button data-scn="modern">Modern Earth</button>
+      <button data-scn="neo">Neoproterozoic</button>
+    </div>
+    <ul class="note plist">
+      <li><strong>Modern Earth</strong> — Sun 100% · CO₂ 420 ppm · volcanism 1× · basalt 0% · modern continents</li>
+      <li><strong>Neoproterozoic</strong> — Sun 94% · CO₂ 420 ppm · volcanism 0.5× · basalt 7% · low-latitude supercontinent</li>
+    </ul>
+
+    <h2>Restart the ice</h2>
+    <p class="note">Keeps settings, resets the clock, starts from:</p>
+    <div class="btns">
+      <button data-restart="caps">Polar caps</button>
+      <button data-restart="frozen">Fully frozen</button>
+      <button data-restart="free">Ice-free</button>
+    </div>
+
+    <h2>Adjust</h2>
+    <div class="row"><label for="solar">Solar constant</label><input type="range" id="solar" min="70" max="110" step="0.5" value="100"><span class="val" id="solarVal">100%</span></div>
+    <div class="row"><label for="co2">CO₂</label><input type="range" id="co2" min="0" max="6" step="any" value="2.6232"><span class="val" id="co2Val">420 ppm</span></div>
+    <div class="row"><label for="volc">Volcanic CO₂</label><input type="range" id="volc" min="-0.6" max="0.6" step="0.05" value="0"><span class="val" id="volcVal">1.0 × today</span></div>
+    <div class="row"><label for="basalt">Fresh flood basalt, % of land</label><input type="range" id="basalt" min="0" max="30" step="1" value="0"><span class="val" id="basaltVal">0%</span></div>
+    <ul class="note plist"><li>CO₂ slider: override; the carbon cycle continues from there</li><li>Volcanism: CO₂ input, × today</li><li>Fresh basalt: weathers 8× faster than average crust. Known provinces: Franklin 1.5% of land, Siberian Traps 5%, CAMP 7%</li><li>Balance for modern Earth: 280 ppm</li></ul>
+
+    <p class="note" style="margin-top:0.8rem">Continents</p>
+    <div class="btns">
+      <button data-preset="modern">Modern</button>
+      <button data-preset="lowlat">Low-latitude supercontinent</button>
+      <button data-preset="highlat">High-latitude continents</button>
+      <button data-preset="south">Southern supercontinent</button>
+      <button data-preset="water">No land</button>
+    </div>
+    <p class="note">Land: <span id="landVal">—</span>. Drag on the map to edit.</p>
+
+    <h2>Ice rules</h2>
+    <ul class="note plist"><li>Sea ice where annual mean T &lt; −1 °C</li><li>Land ice where annual mean T &lt; −8 °C</li><li>Albedo: ocean 0.28 · land 0.35 · ice 0.65</li></ul>
+  </aside>
+
+  <section>
+    <div class="readouts">
+      <div><div class="k">Time</div><div class="v" id="rTime">0 yr</div></div>
+      <div><div class="k">Global mean T</div><div class="v" id="rT">—</div></div>
+      <div><div class="k">CO₂ in air</div><div class="v" id="rCO2">—</div></div>
+      <div><div class="k">Extra CO₂ stored in ocean</div><div class="v" id="rOcean">—</div></div>
+      <div><div class="k">Ice cover</div><div class="v" id="rIce">—</div></div>
+      <div><div class="k">Sea-ice edge N / S</div><div class="v" id="rSea">—</div></div>
+      <div><div class="k">Land-ice edge N / S</div><div class="v" id="rLand">—</div></div>
+      <div><div class="k">Weathering ÷ volcanic</div><div class="v" id="rWV">—</div></div>
+    </div>
+
+    <p class="status" id="status">—</p>
+    <div class="vis">
+      <figure class="g-globe">
+        <canvas id="globe" width="560" height="560"></canvas>
+        <div class="legend"><span class="l1">Land</span><span class="l2">Land ice</span><span class="l3">Ocean</span><span class="l4">Sea ice</span></div>
+        <figcaption>Modern continents are drawn from a coarse 10° map. For other layouts, the land in each band is drawn as one continent; only the fraction of each band that is land matters to the model.</figcaption>
+      </figure>
+      <figure class="g-tlat">
+        <canvas id="tlat" width="560" height="300"></canvas>
+        <figcaption>Annual-mean temperature by latitude. Dashed lines: land and sea ice thresholds.</figcaption>
+      </figure>
+      <figure class="g-phase">
+        <canvas id="phase" width="560" height="300"></canvas>
+        <figcaption>Global mean temperature against atmospheric CO₂. The trail is the path taken; the dot is now.</figcaption>
+      </figure>
+      <figure class="g-strip">
+        <canvas id="map" width="560" height="300"></canvas>
+        <figcaption>Coastline editor. Bands drawn with height proportional to area; land on the left, ocean on the right. Drag to move a coastline.</figcaption>
+      </figure>
+      <figure class="g-tser">
+        <canvas id="tseries" width="560" height="300"></canvas>
+        <figcaption>Global mean temperature (black, left axis); CO₂ in the air (blue, solid) and dissolved in the ocean in atmospheric-ppm equivalent (blue, dashed), right axis, log scale.</figcaption>
+      </figure>
+    </div>
+  </section>
+</div>
+
+<section class="eqs">
+  <h2>Model equations</h2>
+  <p>Ninety latitude bands, 2° each. For band $i$ with $x_i = \sin\varphi_i$ at its midpoint, land fraction $f_i$, and temperature $T_i$:</p>
+  \[ C_i \frac{dT_i}{dt} = Q\,s(x_i)\,(1-\alpha_i) \;-\; \big(A - \Delta F + B\,T_i\big) \;-\; C_{\rm tr}\,(T_i - \bar T) \]
+  <p>Sunlight by latitude: $s(x) = 1 - 0.241\,(3x^2 - 1)$, with $Q = 340$ W m⁻² × (solar constant / 100%).</p>
+  <p>Albedo from surface type and ice cover, where $\ell_i$ and $o_i$ are the ice-covered fractions of the land and ocean in the band (0 above the threshold + 3 °C, 1 below the threshold − 3 °C, linear between; thresholds −1 °C for sea ice, −8 °C for land ice):</p>
+  \[ \alpha_i = f_i\big[(1-\ell_i)\,0.35 + \ell_i\,0.65\big] + (1-f_i)\big[(1-o_i)\,0.28 + o_i\,0.65\big] \]
+  <p>Thermal emission $A + B T$ with $A = 196$ W m⁻², $B = 2.1$ W m⁻² °C⁻¹ at 420 ppm CO₂. Extra greenhouse forcing from CO₂ at concentration $c$:</p>
+  \[ \Delta F = 5.35\,\ln\frac{c}{420} + 0.39\left[\ln\frac{c}{420}\right]^2 \quad\text{(second term only for } c > 420\text{)} \]
+  <p>Heat transport toward the global mean with $C_{\rm tr} = 2.7$ W m⁻² °C⁻¹. Heat capacity $C_i = 0.5 f_i + 8\,(1-f_i)$ W yr m⁻² °C⁻¹ (ocean responds slowly, land quickly).</p>
+  <p>Carbon cycle, when on. Volcanic input $V = 0.044$ ppm yr⁻¹ × the volcanic multiplier. Weathering on ice-free land, faster where warm and at higher CO₂:</p>
+  \[ \frac{dc}{dt} = V - W, \qquad W = k\,(1 + 7b)\,V_0 \left(\frac{c}{420}\right)^{0.3} \sum_i w_i\, f_i\,(1-\ell_i)\, e^{(T_i - 15)/13.7} \]
+  <p>where $w_i$ is the band's fraction of Earth's surface, $b$ is the fraction of land that is fresh basalt (weathering 8× average crust), and $k$ is fixed so that $W = V$ for the modern Earth at the pre-industrial 280 ppm.</p>
+  <p>Half of the volcanic CO₂ is released under the sea. The ocean holds dissolved CO₂ in an amount $O$ (in atmospheric-ppm equivalent) that, over open water, equilibrates with the air in ~1000 years toward $O = 0.5\,c$. Under sea ice, exchange is cut to the open-water fraction plus 10% of the ice-covered area (cracks and thin ice), so submarine CO₂ accumulates in the ocean and is released when the ice breaks up:</p>
+  \[ \frac{dc}{dt} = 0.5\,V - W + E, \qquad \frac{dO}{dt} = 0.5\,V - E, \qquad E = \frac{O - 0.5\,c}{1.5}\,\frac{\text{contact}}{1000\ \text{yr}} \]
+  <h2>What the Neoproterozoic scenario assumes, and why</h2>
+  <ul>
+    <li>Sun 94%: its luminosity at 700 Ma from standard solar evolution.</li>
+    <li>Low-latitude supercontinent: Rodinia straddled the equator.</li>
+    <li>Fresh basalt 7% of land: the Franklin large igneous province erupted across equatorial Laurentia at 717 Ma, the age of the Sturtian onset (~1.5% of land), with several other Cryogenian provinces; 7% is the size of the largest known province (CAMP). Basalt consumes CO₂ ~8× faster than average crust per unit area (Dessert et al. 2003).</li>
+    <li>Volcanism 0.5×: Neoproterozoic outgassing is not measured. Continental-arc activity, traced by detrital zircons, was at a minimum through the Cryogenian (McKenzie et al. 2016, <em>Science</em>), which argues for reduced CO₂ output; half of modern is within the range considered.</li>
+  </ul>
+  <p>With these values CO₂ falls below this model's freezing point of ~150 ppm (with a 94% Sun). Comprehensive climate models freeze at ~100–300 ppm under the same Sun. Ice thresholds are set from present-day observations: sea-ice edges sit at annual mean air temperatures of about −1 to −5 °C, ice-sheet margins near −8 °C; the model uses −1 °C for sea ice, at the warm end of that range, and consequently has somewhat more sea ice than today (edge at ~58° rather than ~62°). One planetary albedo, 0.65, is used for all ice. The exit from the frozen state occurs at ~0.25 bar of CO₂; published estimates range from 0.1 to over 0.3 bar depending on ice albedo and dust. Under full ice cover the model's weathering is zero: there is no exposed rock and, on a frozen planet, almost no rain. Half of volcanic CO₂ enters the ocean rather than the air. With 10% of the ice-covered ocean still exchanging gas through cracks and thin ice, the ocean stays close to equilibrium with the air and simply holds a third of the added carbon, which makes the frozen interval about 1.5× longer than if all volcanic CO₂ went to the air (~16 Myr in the scenario). A perfectly sealed ocean would store the submarine half entirely, doubling the interval and releasing the stored CO₂ when the ice breaks; how leaky the ice was is not known.</p>
+</section>
+
+<script>
+// Latitude-band energy balance model with land/ocean, ice-albedo feedback,
+// and a slow carbon cycle (volcanic CO2 input vs silicate weathering).
+// Units: W m^-2, degrees C, years, ppm.
+
+(function (root) {
+  const BAND = 2;                 // band width in degrees of latitude
+  const NB = 180 / BAND;          // index 0 = northernmost band ... NB-1 = southernmost
+  const REP = 10 / BAND;          // bands per 10-degree row of the land presets
+  const bands = [];
+  for (let i = 0; i < NB; i++) {
+    const latTop = 90 - BAND * i, latBot = latTop - BAND;
+    const mid = (latTop + latBot) / 2;
+    const x = Math.sin(mid * Math.PI / 180);
+    const w = Math.abs(Math.sin(latTop * Math.PI / 180) - Math.sin(latBot * Math.PI / 180)) / 2;
+    bands.push({ latTop, latBot, mid, x, w, s: 1 - 0.241 * (3 * x * x - 1) });
+  }
+
+  const dup = a => a.flatMap(v => new Array(REP).fill(v));
+  const PRESETS = {
+    modern:  dup([0.14,0.39,0.78,0.64,0.56,0.50,0.44,0.25,0.31, 0.33,0.22,0.17,0.14,0.03,0.00,0.36,0.94,1.00]),
+    lowlat:  dup([0,0,0,0.06,0.06,0.06,0.55,0.55,0.55, 0.55,0.55,0.55,0.06,0.06,0.06,0,0,0]),
+    highlat: dup([0.9,0.9,0.9,0.9,0.9,0.04,0.04,0.04,0.04, 0.04,0.04,0.04,0.04,0.9,0.9,0.9,0.9,0.9]),
+    south:   dup([0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05, 0.55,0.55,0.55,0.55,0.55,0.55,0.4,0.4,0.4]),
+    water:   new Array(NB).fill(0),
+  };
+
+  const DEFAULTS = {
+    solarPct: 100,      // % of modern solar constant
+    co2: 420,           // ppm
+    carbonCycle: true,
+    volcMult: 1,        // multiplier on volcanic CO2 flux
+    basalt: 0,          // fraction of land that is fresh flood basalt (weathers 8x faster than average crust)
+    A: 196, B: 2.1,     // OLR = A + B T at 420 ppm
+    Ctr: 2.7,           // meridional heat transport coefficient
+    albOcean: 0.28, albLand: 0.35, albSeaIce: 0.65, albLandIce: 0.65,
+    TfLand: -8,         // land ice persists below this annual mean T (ice-sheet margins)
+    TfOcean: -1,        // sea ice persists below this (observed sea-ice edges: −1 to −5 °C annual mean)
+    ramp: 6,            // width (deg C) of the partial-ice ramp around the threshold
+    capOcean: 30,       // W yr m^-2 K^-1 (mixed layer plus upper ocean)
+    capLand: 0.5,
+    V0: 0.044,          // ppm / yr volcanic CO2 (8e12 mol/yr)
+    subaerial: 0.5,     // fraction of volcanic CO2 released above sea level (rest enters the ocean)
+    leak: 0.1,          // fraction of ice-covered ocean that still exchanges gas with the air (cracks, thin ice)
+    oceanRatio: 0.5,    // dissolved-CO2 capacity of the ocean relative to the atmosphere, at equilibrium
+    exchangeYears: 1000, // air-sea equilibration time over open water
+    C0: 420,
+  };
+
+  function iceFrac(T, Tf, ramp) {
+    // 1 when T <= Tf - ramp/2, 0 when T >= Tf + ramp/2
+    const v = (Tf + ramp / 2 - T) / ramp;
+    return v < 0 ? 0 : v > 1 ? 1 : v;
+  }
+
+  function create(opts) {
+    const p = Object.assign({}, DEFAULTS, opts || {});
+    const st = {
+      p,
+      land: PRESETS.modern.slice(),
+      T: new Array(NB).fill(15),
+      co2: p.co2,
+      ocean: p.co2 * 0.5, // excess dissolved CO2 in the ocean, atmospheric-ppm equivalent
+      t: 0,
+      kW: 1,             // weathering normalisation, set by calibrate()
+      diag: {},
+      history: [],       // {t, Tbar, co2, iceFrac}
+    };
+    return st;
+  }
+
+  // Compute diagnostics and equilibrium temperatures for the current state.
+  function step(st, dt) {
+    const p = st.p;
+    const Q = 340 * p.solarPct / 100;
+    const L = Math.log(st.co2 / p.C0);
+    const dF = 5.35 * L + 0.39 * L * L * (L > 0 ? 1 : 0); // quadratic term for very high CO2 (after Byrne & Goldblatt 2014)
+    const Aeff = p.A - dF;
+
+    const iL = new Array(NB), iO = new Array(NB), alb = new Array(NB), abs = new Array(NB);
+    let absMean = 0, albMean = 0, iceArea = 0, G = 0;
+    for (let i = 0; i < NB; i++) {
+      const b = bands[i], f = st.land[i], T = st.T[i];
+      iL[i] = iceFrac(T, p.TfLand, p.ramp);
+      iO[i] = iceFrac(T, p.TfOcean, p.ramp);
+      alb[i] = f * ((1 - iL[i]) * p.albLand + iL[i] * p.albLandIce)
+             + (1 - f) * ((1 - iO[i]) * p.albOcean + iO[i] * p.albSeaIce);
+      abs[i] = Q * b.s * (1 - alb[i]);
+      absMean += b.w * abs[i];
+      albMean += b.w * b.s * alb[i];
+      iceArea += b.w * (f * iL[i] + (1 - f) * iO[i]);
+      // weathering: ice-free land, faster when warm
+      G += b.w * f * (1 - iL[i]) * Math.exp((T - 15) / 13.7);
+    }
+    const TbarEq = (absMean - Aeff) / p.B;
+    let Tbar = 0;
+    for (let i = 0; i < NB; i++) {
+      const b = bands[i];
+      const Teq = (abs[i] - Aeff + p.Ctr * TbarEq) / (p.B + p.Ctr);
+      const cap = st.land[i] * p.capLand + (1 - st.land[i]) * p.capOcean;
+      const tau = cap / (p.B + p.Ctr);
+      st.T[i] += (Teq - st.T[i]) * (1 - Math.exp(-dt / tau));
+      Tbar += b.w * st.T[i];
+    }
+
+    // carbon cycle
+    const V = p.V0 * p.volcMult;
+    const weath = 1 + 7 * p.basalt;
+    const W = p.V0 * st.kW * weath * Math.pow(st.co2 / p.C0, 0.3) * G;
+    // open-water fraction of the ocean (plus a small leak through ice) controls air-sea exchange
+    let openOcean = 0, oceanArea = 0;
+    for (let i = 0; i < NB; i++) { const a = bands[i].w * (1 - st.land[i]); oceanArea += a; openOcean += a * (1 - iO[i]); }
+    const openFrac = oceanArea > 0 ? openOcean / oceanArea : 0;
+    const contact = openFrac + p.leak * (1 - openFrac);
+    let exch = 0;
+    if (p.carbonCycle) {
+      // volcanic CO2: subaerial part to the air, submarine part to the ocean; weathering removes from the air
+      st.co2 += (p.subaerial * V - W) * dt;
+      st.ocean += (1 - p.subaerial) * V * dt;
+      // air-sea exchange relaxes the ocean's dissolved CO2 toward equilibrium with the atmosphere
+      const target = p.oceanRatio * st.co2;
+      const f = 1 - Math.exp(-contact * dt / p.exchangeYears);
+      exch = (st.ocean - target) * f / (1 + p.oceanRatio);   // amount moved ocean -> air (negative = air -> ocean)
+      st.ocean -= exch; st.co2 += exch;
+      if (st.co2 < 1) st.co2 = 1;
+      if (st.co2 > 2e6) st.co2 = 2e6;
+      if (st.ocean < 0) st.ocean = 0;
+    }
+    st.t += dt;
+    st.diag = { Q, dF, Aeff, iL, iO, alb, abs, Tbar, TbarEq, albMean, iceArea, V, W, G, openFrac, exch };
+    return st.diag;
+  }
+
+  // Run many sub-steps so that no single step exceeds maxSub years.
+  function advance(st, years, maxSub) {
+    maxSub = maxSub || 2000;
+    let remaining = years;
+    while (remaining > 1e-9) {
+      const dt = Math.min(remaining, maxSub);
+      step(st, dt);
+      remaining -= dt;
+    }
+    return st.diag;
+  }
+
+  // Relax temperatures to equilibrium at fixed CO2 (carbon cycle off during solve).
+  function equilibrate(st, iters) {
+    const cc = st.p.carbonCycle;
+    st.p.carbonCycle = false;
+    const t0 = st.t;
+    for (let k = 0; k < (iters || 200); k++) step(st, 50);
+    st.t = t0;
+    st.p.carbonCycle = cc;
+    return st.diag;
+  }
+
+  // Set weathering constant so that W = V for the current (equilibrated) state at C0.
+  function calibrate(st) {
+    const saveCO2 = st.co2;
+    st.co2 = 280;
+    equilibrate(st);
+    st.kW = 1 / Math.pow(280 / st.p.C0, 0.3) / st.diag.G;
+    st.co2 = saveCO2;
+    equilibrate(st);
+  }
+
+  function iceLine(st, which) {
+    // lowest |latitude| (per hemisphere) where ice fraction >= 0.5; returns [north, south]
+    const fr = which === 'land' ? st.diag.iL : st.diag.iO;
+    let n = null, s = null;
+    for (let i = NB / 2 - 1; i >= 0; i--) if (fr[i] >= 0.5) { n = bands[i].latBot; break; }
+    for (let i = NB / 2; i < NB; i++) if (fr[i] >= 0.5) { s = -bands[i].latTop; break; }
+    return [n, s];
+  }
+
+  root.SnowballModel = { NB, BAND, REP, bands, PRESETS, DEFAULTS, create, step, advance, equilibrate, calibrate, iceLine, iceFrac };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  const M = window.SnowballModel;
+  const MODERN_MASK = [
+    '..........#####.....................',
+    '....#######..###........####........',
+    '..##########.#.....#################',
+    '.....#######.....###############.#..',
+    '......#####......###############....',
+    '......####.......#############.#....',
+    '.......###.......#############......',
+    '........#.......#######..#..........',
+    '..........###....######.....##......',
+    '..........####.....###......#####...',
+    '...........###.....####........#....',
+    '...........##.......#.........###...',
+    '...........#..................###..#',
+    '...................................#',
+    '....................................',
+    '...........##....##..##.##..##..###.',
+    '#########..#########################',
+    '####################################'
+  ];
+  let layoutMask = MODERN_MASK;   // null = draw each band's land as one sector
+  const $ = id => document.getElementById(id);
+
+  // ---------- state ----------
+  const st = M.create();
+  M.calibrate(st);             // weathering constant fixed from modern Earth
+  let running = true;
+  let prevIce = null, prevCO2 = null, prevT = null;
+  let history = [];
+  const HMAX = 4000;
+
+  function pushHistory() {
+    history.push({ t: st.t, T: st.diag.Tbar, c: st.co2, o: st.ocean, ice: st.diag.iceArea });
+    if (history.length > HMAX) {
+      // thin out: keep every other point
+      history = history.filter((_, i) => i % 2 === 0);
+    }
+  }
+  function resetHistory() { history = []; st.t = 0; }
+
+  // ---------- controls ----------
+  function fmtCO2(c) {
+    if (c >= 1e5) return (c / 1e6).toFixed(2) + ' bar';
+    if (c >= 1e4) return (c / 1000).toFixed(1) + ' × 10³ ppm';
+    return Math.round(c) + ' ppm';
+  }
+  function fmtTime(t) {
+    if (t < 1000) return Math.round(t) + ' yr';
+    if (t < 1e6) return (t / 1000).toFixed(t < 1e4 ? 1 : 0) + ' kyr';
+    return (t / 1e6).toFixed(2) + ' Myr';
+  }
+  function fmtDeg(v) { return (v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + ' °C'; }
+  function fmtEdge(pair) {
+    const f = v => v === null ? 'none' : Math.abs(v) + '°';
+    return f(pair[0]) + ' / ' + f(pair[1]);
+  }
+
+  function bindRange(id, valId, apply, fmt) {
+    const el = $(id), out = $(valId);
+    const update = () => { const v = parseFloat(el.value); apply(v); out.textContent = fmt(v); };
+    el.addEventListener('input', () => { update(); if (!settingScenario) mark('data-scn', null); draw(); });
+    update();
+  }
+  bindRange('solar', 'solarVal', v => { st.p.solarPct = v; }, v => v.toFixed(1).replace(/\.0$/, '') + '%');
+  bindRange('co2', 'co2Val', v => { st.co2 = Math.pow(10, v); st.ocean = st.p.oceanRatio * st.co2; }, v => fmtCO2(Math.pow(10, v)));
+  let co2Dragging = false;
+  $('co2').addEventListener('pointerdown', () => { co2Dragging = true; });
+  window.addEventListener('pointerup', () => { co2Dragging = false; });
+  bindRange('volc', 'volcVal', v => { st.p.volcMult = Math.pow(10, v); }, v => Math.pow(10, v).toFixed(2) + ' × today');
+  bindRange('basalt', 'basaltVal', v => { st.p.basalt = v / 100; }, v => v + '%');
+
+
+  function mark(attr, value) {
+    document.querySelectorAll('[' + attr + ']').forEach(b => b.classList.toggle('selected', b.getAttribute(attr) === value));
+  }
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    st.land = M.PRESETS[b.dataset.preset].slice();
+    layoutMask = b.dataset.preset === 'modern' ? MODERN_MASK : null;
+    mark('data-preset', b.dataset.preset); mark('data-scn', null);
+    draw();
+  }));
+
+  let settingScenario = false;
+  function setRange(id, v) { $(id).value = v; $(id).dispatchEvent(new Event('input')); }
+  function restart(mode) {
+    if (mode === 'frozen') { st.T.fill(-40); M.step(st, 0.001); }
+    else if (mode === 'free') { st.T.fill(30); M.step(st, 0.001); }
+    else { st.T.fill(15); M.equilibrate(st, 300); }   // from a warm start: polar caps if the settings allow them
+    st.ocean = st.p.oceanRatio * st.co2;
+    resetHistory(); pushHistory(); prevIce = null; prevCO2 = null; prevT = null; autoDt = 1; lastT = null; draw();
+  }
+  document.querySelectorAll('[data-restart]').forEach(b => b.addEventListener('click', () => restart(b.dataset.restart)));
+  document.querySelectorAll('[data-scn]').forEach(b => b.addEventListener('click', () => {
+    settingScenario = true;
+    if (b.dataset.scn === 'modern') {
+      setRange('solar', 100); setRange('volc', 0); setRange('basalt', 0); st.land = M.PRESETS.modern.slice(); layoutMask = MODERN_MASK;
+      setRange('co2', Math.log10(420));
+      $('speed').value = 'auto';
+    } else {
+      setRange('solar', 94); setRange('volc', -0.3); setRange('basalt', 7); st.land = M.PRESETS.lowlat.slice(); layoutMask = null;
+      setRange('co2', Math.log10(420));
+      $('speed').value = 'auto';
+    }
+    settingScenario = false;
+    mark('data-scn', b.dataset.scn); mark('data-preset', b.dataset.scn === 'modern' ? 'modern' : 'lowlat');
+    restart('caps');
+  }));
+
+  $('btnRun').addEventListener('click', () => { running = !running; $('btnRun').textContent = running ? 'Pause' : 'Run'; if (running) requestAnimationFrame(frame); });
+
+  // ---------- simulation loop ----------
+  let autoDt = 1, lastT = null, lastIce = null, lastCO2 = null;
+  function chooseDt() {
+    if ($('speed').value !== 'auto') return parseFloat($('speed').value);
+    const d = st.diag;
+    let dt = autoDt * 2;                       // grow unless something is moving
+    if (lastT !== null) {
+      const rT = Math.abs(d.Tbar - lastT) / autoDt, rI = Math.abs(d.iceArea - lastIce) / autoDt, rC = Math.abs(Math.log(st.co2 / lastCO2)) / autoDt;
+      const want = Math.min(rT > 0 ? 0.3 / rT : Infinity, rI > 0 ? 0.005 / rI : Infinity, rC > 0 ? 0.03 / rC : Infinity);
+      dt = Math.min(dt, want);
+    }
+    autoDt = Math.max(1, Math.min(1e6, dt));
+    return autoDt;
+  }
+  function tick() {
+    let years = chooseDt();
+    lastT = st.diag.Tbar; lastIce = st.diag.iceArea; lastCO2 = st.co2;
+    if ($('speed').value === 'auto') {
+      // take the step; if the ice or temperature jumped, roll back and take a smaller one so transitions are visible
+      const T0 = st.T.slice(), c0 = st.co2, o0 = st.ocean, t0 = st.t;
+      for (let tries = 0; tries < 8; tries++) {
+        M.advance(st, years, 2000);
+        if (years <= 1 || (Math.abs(st.diag.Tbar - lastT) < 1.0 && Math.abs(st.diag.iceArea - lastIce) < 0.02)) break;
+        st.T = T0.slice(); st.co2 = c0; st.ocean = o0; st.t = t0; M.step(st, 1e-6);
+        years = Math.max(1, years / 8);
+      }
+      autoDt = years;
+    } else {
+      M.advance(st, years, 2000);
+    }
+    $('stepVal').textContent = fmtTime(years) + ' per frame';
+    pushHistory();
+    if (!co2Dragging) {
+      $('co2').value = Math.log10(st.co2).toFixed(3);
+      $('co2Val').textContent = fmtCO2(st.co2);
+    }
+  }
+  let last = 0;
+  function frame(ts) {
+    if (!running) return;
+    if (ts - last > 60) { tick(); draw(); last = ts; }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- drawing ----------
+  const map = $('map'), tlat = $('tlat'), tser = $('tseries'), phase = $('phase'), globe = $('globe');
+  const NB = M.NB, bands = M.bands, REP = M.REP;
+  const cum = [0]; for (let i = 0; i < NB; i++) cum.push(cum[i] + bands[i].w);  // cumulative area, 0..1
+
+  function mix(a, b, f) {
+    return '#' + [0, 1, 2].map(k => {
+      const x = parseInt(a.slice(1 + 2 * k, 3 + 2 * k), 16), y = parseInt(b.slice(1 + 2 * k, 3 + 2 * k), 16);
+      return Math.round(x + (y - x) * f).toString(16).padStart(2, '0');
+    }).join('');
+  }
+  const C_LAND = '#B08D57', C_LANDICE = '#F4F6F8', C_OCEAN = '#3D7AB5', C_SEAICE = '#D8E6F0';
+
+  function drawMap() {
+    const ctx = map.getContext('2d'), W = map.width, H = map.height;
+    const L = 44, R = 12, T0 = 10, B0 = 14;
+    const pw = W - L - R, ph = H - T0 - B0;
+    ctx.clearRect(0, 0, W, H);
+    const d = st.diag;
+    for (let i = 0; i < NB; i++) {
+      const y0 = T0 + cum[i] * ph, y1 = T0 + cum[i + 1] * ph;
+      const lw = st.land[i] * pw;
+      ctx.fillStyle = mix(C_LAND, C_LANDICE, d.iL[i]);
+      ctx.fillRect(L, y0, lw, y1 - y0);
+      ctx.fillStyle = mix(C_OCEAN, C_SEAICE, d.iO[i]);
+      ctx.fillRect(L + lw, y0, pw - lw, y1 - y0);
+      if ((i + 1) % REP === 0) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, y1); ctx.lineTo(L + pw, y1); ctx.stroke(); }
+    }
+    // frame and labels
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.strokeRect(L, T0, pw, ph);
+    ctx.fillStyle = '#000'; ctx.font = '11px Menlo, Consolas, monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= NB; i += 3 * REP) {
+      const lat = 90 - M.BAND * i, y = T0 + cum[i] * ph;
+      ctx.fillText((lat > 0 ? lat + 'N' : lat < 0 ? (-lat) + 'S' : '0'), L - 5, y);
+      ctx.beginPath(); ctx.moveTo(L - 3, y); ctx.lineTo(L, y); ctx.stroke();
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = '11px Helvetica, Arial, sans-serif';
+    ctx.fillText('land', L + 2, H - 3);
+    ctx.textAlign = 'right'; ctx.fillText('ocean', L + pw - 2, H - 3);
+  }
+  // coastline editing
+  let dragging = false;
+  function mapEdit(ev) {
+    const r = map.getBoundingClientRect();
+    const x = (ev.clientX - r.left) * map.width / r.width, y = (ev.clientY - r.top) * map.height / r.height;
+    const L = 44, R = 12, T0 = 10, B0 = 14, pw = map.width - L - R, ph = map.height - T0 - B0;
+    const a = (y - T0) / ph;
+    if (a < 0 || a > 1) return;
+    let i = 0; while (i < NB - 1 && cum[i + 1] < a) i++;
+    let f = (x - L) / pw; f = Math.max(0, Math.min(1, f));
+    const g = Math.floor(i / REP) * REP;
+    for (let k = g; k < g + REP; k++) st.land[k] = Math.round(f * 20) / 20;
+    layoutMask = null; mark('data-preset', null); mark('data-scn', null);
+    M.step(st, 0.001);
+    draw();
+  }
+  map.addEventListener('pointerdown', e => { e.preventDefault(); dragging = true; map.setPointerCapture(e.pointerId); mapEdit(e); });
+  map.addEventListener('pointermove', e => { if (dragging) { e.preventDefault(); mapEdit(e); } });
+  map.addEventListener('pointerup', () => { dragging = false; });
+  map.addEventListener('pointercancel', () => { dragging = false; });
+
+  function axes(ctx, L, T0, pw, ph) {
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.strokeRect(L, T0, pw, ph);
+  }
+
+  function drawTlat() {
+    const ctx = tlat.getContext('2d'), W = tlat.width, H = tlat.height;
+    const L = 44, R = 14, T0 = 12, B0 = 34, pw = W - L - R, ph = H - T0 - B0;
+    ctx.clearRect(0, 0, W, H);
+    const tmin = -60, tmax = 40;
+    const yOf = T => T0 + (tmax - T) / (tmax - tmin) * ph;
+    const xOf = lat => L + (90 - lat) / 180 * pw;
+    // gridlines
+    ctx.font = '11px Menlo, Consolas, monospace'; ctx.fillStyle = '#000'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let T = tmin; T <= tmax; T += 20) {
+      const y = yOf(T);
+      ctx.strokeStyle = T === 0 ? '#999' : '#e4e4e4'; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke();
+      ctx.fillText(T, L - 5, y);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let lat = 90; lat >= -90; lat -= 30) {
+      const x = xOf(lat);
+      ctx.strokeStyle = '#e4e4e4'; ctx.beginPath(); ctx.moveTo(x, T0); ctx.lineTo(x, T0 + ph); ctx.stroke();
+      ctx.fillText(lat > 0 ? lat + 'N' : lat < 0 ? (-lat) + 'S' : '0', x, T0 + ph + 4);
+    }
+    ctx.fillText('latitude', L + pw / 2, T0 + ph + 18);
+    ctx.save(); ctx.translate(12, T0 + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillText('°C', 0, 0); ctx.restore();
+    // thresholds
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = C_LAND; ctx.beginPath(); ctx.moveTo(L, yOf(st.p.TfLand)); ctx.lineTo(L + pw, yOf(st.p.TfLand)); ctx.stroke();
+    ctx.strokeStyle = C_OCEAN; ctx.beginPath(); ctx.moveTo(L, yOf(st.p.TfOcean)); ctx.lineTo(L + pw, yOf(st.p.TfOcean)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.font = '10px Helvetica, Arial, sans-serif';
+    ctx.fillStyle = C_LAND; ctx.fillText('land ice', L + 4, yOf(st.p.TfLand) - 2);
+    ctx.fillStyle = C_OCEAN; ctx.fillText('sea ice', L + 4, yOf(st.p.TfOcean) + 11);
+    // temperature curve
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i < NB; i++) {
+      const x = xOf(bands[i].mid), y = yOf(Math.max(tmin, Math.min(tmax, st.T[i])));
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = '#000';
+    for (let i = 0; i < NB; i++) { ctx.beginPath(); ctx.arc(xOf(bands[i].mid), yOf(Math.max(tmin, Math.min(tmax, st.T[i]))), 2.5, 0, 6.283); ctx.fill(); }
+    // global mean
+    ctx.strokeStyle = '#B8471F'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(L, yOf(st.diag.Tbar)); ctx.lineTo(L + pw, yOf(st.diag.Tbar)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#B8471F'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText('global mean', L + pw - 4, yOf(st.diag.Tbar) - 2);
+    axes(ctx, L, T0, pw, ph);
+  }
+
+  function drawSeries() {
+    const ctx = tser.getContext('2d'), W = tser.width, H = tser.height;
+    const L = 44, R = 60, T0 = 12, B0 = 34, pw = W - L - R, ph = H - T0 - B0;
+    ctx.clearRect(0, 0, W, H);
+    const tmin = -60, tmax = 40;
+    const yT = T => T0 + (tmax - T) / (tmax - tmin) * ph;
+    const yC = c => T0 + (6 - Math.log10(Math.max(1, c))) / 6 * ph;
+    ctx.font = '11px Menlo, Consolas, monospace'; ctx.textBaseline = 'middle';
+    for (let T = tmin; T <= tmax; T += 20) {
+      const y = yT(T);
+      ctx.strokeStyle = T === 0 ? '#999' : '#e4e4e4'; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke();
+      ctx.fillStyle = '#000'; ctx.textAlign = 'right'; ctx.fillText(T, L - 5, y);
+    }
+    ctx.fillStyle = '#1F5FA0'; ctx.textAlign = 'left';
+    const cl = ['1', '10', '100', '10³', '10⁴', '10⁵', '10⁶'];
+    for (let k = 0; k <= 6; k++) ctx.fillText(cl[k], L + pw + 5, yC(Math.pow(10, k)));
+    ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.save(); ctx.translate(12, T0 + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillText('°C', 0, 0); ctx.restore();
+    ctx.save(); ctx.translate(W - 8, T0 + ph / 2); ctx.rotate(Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillStyle = '#1F5FA0'; ctx.fillText('CO₂ ppm', 0, 0); ctx.restore();
+    if (history.length > 1) {
+      const t0 = history[0].t, t1 = history[history.length - 1].t;
+      const xOf = t => L + (t - t0) / Math.max(1e-9, t1 - t0) * pw;
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#1F5FA0'; ctx.setLineDash([4, 4]); ctx.beginPath();
+      history.forEach((h, i) => { const x = xOf(h.t), y = yC(h.o); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = '#1F5FA0'; ctx.beginPath();
+      history.forEach((h, i) => { const x = xOf(h.t), y = yC(h.c); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke();
+      ctx.strokeStyle = '#000'; ctx.beginPath();
+      history.forEach((h, i) => { const x = xOf(h.t), y = yT(Math.max(tmin, Math.min(tmax, h.T))); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke();
+      ctx.fillStyle = '#000'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(fmtTime(t0), L, T0 + ph + 4);
+      ctx.textAlign = 'right'; ctx.fillText(fmtTime(t1), L + pw, T0 + ph + 4);
+    }
+    ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('time', L + pw / 2, T0 + ph + 18);
+    axes(ctx, L, T0, pw, ph);
+  }
+
+  function drawPhase() {
+    const ctx = phase.getContext('2d'), W = phase.width, H = phase.height;
+    const L = 44, R = 14, T0 = 12, B0 = 34, pw = W - L - R, ph = H - T0 - B0;
+    ctx.clearRect(0, 0, W, H);
+    const tmin = -60, tmax = 40;
+    const yT = T => T0 + (tmax - T) / (tmax - tmin) * ph;
+    const xC = c => L + Math.log10(Math.max(1, c)) / 6 * pw;
+    ctx.font = '11px Menlo, Consolas, monospace'; ctx.textBaseline = 'middle';
+    for (let T = tmin; T <= tmax; T += 20) {
+      const y = yT(T);
+      ctx.strokeStyle = T === 0 ? '#999' : '#e4e4e4'; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pw, y); ctx.stroke();
+      ctx.fillStyle = '#000'; ctx.textAlign = 'right'; ctx.fillText(T, L - 5, y);
+    }
+    const cl = ['1', '10', '100', '10³', '10⁴', '10⁵', '10⁶'];
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let k = 0; k <= 6; k++) {
+      const x = xC(Math.pow(10, k));
+      ctx.strokeStyle = '#e4e4e4'; ctx.beginPath(); ctx.moveTo(x, T0); ctx.lineTo(x, T0 + ph); ctx.stroke();
+      ctx.fillStyle = '#000'; ctx.fillText(cl[k], x, T0 + ph + 4);
+    }
+    ctx.fillText('CO₂ in air, ppm', L + pw / 2, T0 + ph + 18);
+    ctx.save(); ctx.translate(12, T0 + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textBaseline = 'middle'; ctx.fillText('°C', 0, 0); ctx.restore();
+    if (history.length > 1) {
+      ctx.strokeStyle = '#888'; ctx.lineWidth = 1.5; ctx.beginPath();
+      history.forEach((h, i) => { const x = xC(h.c), y = yT(Math.max(tmin, Math.min(tmax, h.T))); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#B8471F'; ctx.beginPath(); ctx.arc(xC(st.co2), yT(Math.max(tmin, Math.min(tmax, st.diag.Tbar))), 5, 0, 6.283); ctx.fill();
+    axes(ctx, L, T0, pw, ph);
+  }
+
+
+  // ---------- globe ----------
+  let rot = 0;
+  function shade(hex, k) {
+    return '#' + [0, 1, 2].map(j => Math.round(parseInt(hex.slice(1 + 2 * j, 3 + 2 * j), 16) * k).toString(16).padStart(2, '0')).join('');
+  }
+  function drawGlobe() {
+    const ctx = globe.getContext('2d'), W = globe.width, H = globe.height;
+    const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 12;
+    const tilt = 22 * Math.PI / 180, ct = Math.cos(tilt), stl = Math.sin(tilt);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.clip();
+    const d = st.diag;
+    const proj = (lat, lon) => {
+      const p = lat * Math.PI / 180, l = lon * Math.PI / 180;
+      const x = Math.cos(p) * Math.sin(l), y = Math.sin(p), z = Math.cos(p) * Math.cos(l);
+      return { X: cx + R * x, Y: cy - R * (y * ct - z * stl), z: y * stl + z * ct };
+    };
+    const DL = 5;
+    for (let i = 0; i < NB; i++) {
+      const b = bands[i];
+      const halfLand = 180 * st.land[i];
+      const cLand = mix(C_LAND, C_LANDICE, d.iL[i]), cOcean = mix(C_OCEAN, C_SEAICE, d.iO[i]);
+      for (let lon = -180; lon < 180; lon += DL) {
+        const lonMid = lon + DL / 2;
+        const isLand = layoutMask ? layoutMask[Math.floor(i / REP)][Math.floor((lonMid + 180) / 10)] === '#' : Math.abs(lonMid) < halfLand;
+        const c = proj(b.mid, lonMid + rot);
+        if (c.z <= 0) continue;
+        const p1 = proj(b.latTop, lon + rot), p2 = proj(b.latTop, lon + DL + rot), p3 = proj(b.latBot, lon + DL + rot), p4 = proj(b.latBot, lon + rot);
+        ctx.fillStyle = shade(isLand ? cLand : cOcean, 0.6 + 0.4 * c.z);
+        ctx.beginPath(); ctx.moveTo(p1.X, p1.Y); ctx.lineTo(p2.X, p2.Y); ctx.lineTo(p3.X, p3.Y); ctx.lineTo(p4.X, p4.Y); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 0.6; ctx.stroke();
+      }
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2 * Math.PI); ctx.stroke();
+    // equator and ice-line labels
+    ctx.fillStyle = '#000'; ctx.font = '11px Helvetica, Arial, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('N', cx - 4, 2);
+  }
+
+  function drawStatus() {
+    const d = st.diag;
+    let ice = 'Ice cover steady', co2 = '';
+    if (prevIce !== null) {
+      const di = d.iceArea - prevIce;
+      if (di > 0.0005) ice = 'Ice advancing'; else if (di < -0.0005) ice = 'Ice retreating';
+      if (d.iceArea >= 0.99) ice = 'Fully frozen';
+      if (d.iceArea <= 0.005) ice = 'Ice-free';
+    }
+    if (prevCO2 !== null) {
+      const r = st.co2 / prevCO2;
+      co2 = r > 1.002 ? ' · CO₂ rising (volcanoes > weathering)' : r < 0.998 ? ' · CO₂ falling (weathering > volcanoes)' : ' · CO₂ in balance';
+    }
+    let msg = ice + co2;
+    if (prevIce !== null && prevT !== null && prevCO2 !== null && Math.abs(d.iceArea - prevIce) < 0.0005 && Math.abs(d.Tbar - prevT) < 0.01 && Math.abs(st.co2 / prevCO2 - 1) < 0.0005) {
+      msg = (d.iceArea >= 0.99 ? 'Fully frozen and in balance. ' : d.iceArea <= 0.005 ? 'Ice-free and in balance. ' : 'In balance. ')
+          + 'Volcanic input equals weathering at ' + fmtCO2(st.co2) + '. Nothing will change until you move a slider or change the continents.'
+          + (d.iceArea >= 0.99 ? ' A frozen planet reflects too much sunlight to thaw at this CO₂; it needs tens of thousands of ppm.' : '');
+      if (d.iceArea >= 0.99 && st.diag.V > 0) msg = 'Fully frozen · CO₂ rising slowly (volcanoes > weathering). Speed up to see it.';
+    }
+    $('status').textContent = msg;
+    prevIce = d.iceArea; prevCO2 = st.co2; prevT = d.Tbar;
+  }
+
+  function drawReadouts() {
+    const d = st.diag;
+    $('rTime').textContent = fmtTime(st.t);
+    $('rT').textContent = fmtDeg(d.Tbar);
+    $('rCO2').textContent = fmtCO2(st.co2);
+    $('rOcean').textContent = fmtCO2(Math.max(0, st.ocean - st.p.oceanRatio * st.co2)) + ' equiv.';
+    $('rIce').textContent = (d.iceArea * 100).toFixed(0) + '%';
+    $('rSea').textContent = fmtEdge(M.iceLine(st, 'ocean'));
+    $('rLand').textContent = fmtEdge(M.iceLine(st, 'land'));
+    $('rWV').textContent = d.V > 0 ? (d.W / d.V).toFixed(2) : '—';
+    let landFrac = 0; for (let i = 0; i < NB; i++) landFrac += bands[i].w * st.land[i];
+    $('landVal').textContent = (landFrac * 100).toFixed(0) + '% of surface';
+  }
+
+  function draw() {
+    M.step(st, 1e-6);   // refresh diagnostics for current settings without moving the state
+    rot += 0.4; drawGlobe(); drawMap(); drawTlat(); drawSeries(); drawPhase(); drawReadouts(); drawStatus();
+  }
+
+  // initial: modern equilibrium
+  M.equilibrate(st, 300); resetHistory(); pushHistory(); draw();
+  mark('data-scn', 'modern'); mark('data-preset', 'modern');
+  requestAnimationFrame(frame);
+})();
+</script>
