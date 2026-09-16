@@ -23,8 +23,8 @@
   h2 { font-size: 0.95rem; margin: 1.1rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
   p { margin: 0.3rem 0; }
   .intro { color: var(--muted); max-width: 80ch; margin-bottom: 1rem; }
-  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .layout { display: grid; grid-template-columns: 270px 1fr; gap: 1.2rem; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
 
   .controls { background: var(--panel); padding: 0.8rem 1rem 1rem; border: 1px solid var(--rule); }
   .row { display: flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0; flex-wrap: wrap; }
@@ -43,9 +43,9 @@
   details { margin-top: 0.8rem; }
   summary { cursor: pointer; font-weight: 600; }
 
-  .vis { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "globe tlat" "globe phase" "strip tser"; gap: 1rem; }
+  .vis { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "globe tlat" "globe phase" "strip tser"; gap: 0.8rem; }
   .g-globe { grid-area: globe; } .g-tlat { grid-area: tlat; } .g-phase { grid-area: phase; } .g-strip { grid-area: strip; } .g-tser { grid-area: tser; }
-  @media (max-width: 1100px) { .vis { grid-template-columns: 1fr; grid-template-areas: "globe" "tlat" "strip" "tser" "phase"; } }
+  @media (max-width: 600px) { .vis { grid-template-columns: 1fr; grid-template-areas: "globe" "tlat" "strip" "tser" "phase"; } }
   .status { font-size: 0.95rem; margin: 0 0 0.8rem; min-height: 2.8em; }
   .vis figure { margin: 0; }
   .vis figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
@@ -140,19 +140,19 @@
         <figcaption>Modern continents are drawn from a coarse 10° map. For other layouts, the land in each band is drawn as one continent; only the fraction of each band that is land matters to the model.</figcaption>
       </figure>
       <figure class="g-tlat">
-        <canvas id="tlat" width="560" height="300"></canvas>
+        <canvas id="tlat" width="560" height="260"></canvas>
         <figcaption>Annual-mean temperature by latitude. Dashed lines: land and sea ice thresholds.</figcaption>
       </figure>
       <figure class="g-phase">
-        <canvas id="phase" width="560" height="300"></canvas>
+        <canvas id="phase" width="560" height="260"></canvas>
         <figcaption>Global mean temperature against atmospheric CO₂. The trail is the path taken; the dot is now.</figcaption>
       </figure>
       <figure class="g-strip">
-        <canvas id="map" width="560" height="300"></canvas>
+        <canvas id="map" width="560" height="240"></canvas>
         <figcaption>Coastline editor. Bands drawn with height proportional to area; land on the left, ocean on the right. Drag to move a coastline.</figcaption>
       </figure>
       <figure class="g-tser">
-        <canvas id="tseries" width="560" height="300"></canvas>
+        <canvas id="tseries" width="560" height="240"></canvas>
         <figcaption>Global mean temperature (black, left axis); CO₂ in the air (blue, solid) and dissolved in the ocean in atmospheric-ppm equivalent (blue, dashed), right axis, log scale.</figcaption>
       </figure>
     </div>
