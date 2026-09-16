@@ -36,7 +36,8 @@
   button.selected { background: #000; color: #fff; border-color: #000; }
   button.selected:hover { background: #333; }
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  select { font: inherit; padding: 0.25rem; }
+  .speeds { display: flex; flex-wrap: wrap; gap: 0.2rem 0.8rem; font-size: 0.85rem; margin: 0.3rem 0; }
+  .speeds label { white-space: nowrap; }
   .btns { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0; }
   .note { font-size: 0.8rem; color: var(--muted); }
   ul.plist { padding-left: 1.1rem; margin: 0.3rem 0; } ul.plist li { margin: 0.2rem 0; }
@@ -70,14 +71,14 @@
   <aside class="controls">
     <div class="btns">
       <button id="btnRun">Pause</button>
-      <select id="speed" aria-label="Simulation speed">
-        <option value="auto" selected>Adaptive speed</option>
-        <option value="1">1 year per frame</option>
-        <option value="100">100 years per frame</option>
-        <option value="10000">10,000 years per frame</option>
-        <option value="100000">100,000 years per frame</option>
-        <option value="1000000">1 million years per frame</option>
-      </select>
+    </div>
+    <div class="speeds" id="speed">
+      <label><input type="radio" name="speed" value="auto" checked> Adaptive</label>
+      <label><input type="radio" name="speed" value="1"> 1 yr/frame</label>
+      <label><input type="radio" name="speed" value="100"> 100 yr</label>
+      <label><input type="radio" name="speed" value="10000"> 10 kyr</label>
+      <label><input type="radio" name="speed" value="100000"> 100 kyr</label>
+      <label><input type="radio" name="speed" value="1000000"> 1 Myr</label>
     </div>
     <p class="note">Runs continuously. Current step: <span id="stepVal">—</span>.</p>
 
@@ -475,9 +476,10 @@
   $('btnRun').addEventListener('click', () => { running = !running; $('btnRun').textContent = running ? 'Pause' : 'Run'; if (running) requestAnimationFrame(frame); });
 
   // ---------- simulation loop ----------
+  const speedValue = () => document.querySelector('input[name=speed]:checked').value;
   let autoDt = 1, lastT = null, lastIce = null, lastCO2 = null;
   function chooseDt() {
-    if ($('speed').value !== 'auto') return parseFloat($('speed').value);
+    if (speedValue() !== 'auto') return parseFloat(speedValue());
     const d = st.diag;
     let dt = autoDt * 2;                       // grow unless something is moving
     if (lastT !== null) {
@@ -491,7 +493,7 @@
   function tick() {
     let years = chooseDt();
     lastT = st.diag.Tbar; lastIce = st.diag.iceArea; lastCO2 = st.co2;
-    if ($('speed').value === 'auto') {
+    if (speedValue() === 'auto') {
       // take the step; if the ice or temperature jumped, roll back and take a smaller one so transitions are visible
       const T0 = st.T.slice(), c0 = st.co2, o0 = st.ocean, t0 = st.t;
       for (let tries = 0; tries < 8; tries++) {
