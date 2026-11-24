@@ -1,4 +1,17 @@
 <title>Snowball Earth Model</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Interactive climate model of Snowball Earth: latitude bands with land and ocean, an ice–albedo feedback, and a slow carbon cycle.">
+<meta property="og:title" content="Snowball Earth Model">
+<meta property="og:description" content="Interactive climate model of Snowball Earth: latitude bands with land and ocean, an ice–albedo feedback, and a slow carbon cycle.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://judithhubbard.github.io/snowball-earth-model/">
+<meta property="og:image" content="https://judithhubbard.github.io/snowball-earth-model/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script data-goatcounter="https://snowball.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["\\[","\\]"]]},svg:{fontCache:"global"}};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
 <style>
@@ -23,8 +36,8 @@
   h2 { font-size: 0.95rem; margin: 1.1rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
   p { margin: 0.3rem 0; }
   .intro { color: var(--muted); max-width: 80ch; margin-bottom: 1rem; }
-  .layout { display: grid; grid-template-columns: 270px 1fr; gap: 1.2rem; align-items: start; }
-  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
   .controls { background: var(--panel); padding: 0.8rem 1rem 1rem; border: 1px solid var(--rule); }
   .row { display: flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0; flex-wrap: wrap; }
@@ -44,9 +57,9 @@
   details { margin-top: 0.8rem; }
   summary { cursor: pointer; font-weight: 600; }
 
-  .vis { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "globe tlat" "globe phase" "strip tser"; gap: 0.8rem; }
+  .vis { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "globe tlat" "globe phase" "strip tser"; gap: 0.8rem; }
   .g-globe { grid-area: globe; } .g-tlat { grid-area: tlat; } .g-phase { grid-area: phase; } .g-strip { grid-area: strip; } .g-tser { grid-area: tser; }
-  @media (max-width: 600px) { .vis { grid-template-columns: 1fr; grid-template-areas: "globe" "tlat" "strip" "tser" "phase"; } }
+  @media (max-width: 600px) { .vis { grid-template-columns: minmax(0, 1fr); grid-template-areas: "globe" "tlat" "strip" "tser" "phase"; } }
   .status { font-size: 0.95rem; margin: 0 0 0.8rem; min-height: 2.8em; }
   .vis figure { margin: 0; }
   .vis figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
@@ -62,6 +75,9 @@
   .legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; border: 1px solid #999; }
   .legend .l1::before { background: #B08D57; } .legend .l2::before { background: #F4F6F8; }
   .legend .l3::before { background: #3D7AB5; } .legend .l4::before { background: #D8E6F0; }
+  .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 24px; margin-top: 28px; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+  .foot a { color: inherit; }
+  mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
 </style>
 
 <h1>Snowball Earth Model</h1>
@@ -185,6 +201,10 @@
   </ul>
   <p>With these values CO₂ falls below this model's freezing point of ~150 ppm (with a 94% Sun). Comprehensive climate models freeze at ~100–300 ppm under the same Sun. Ice thresholds are set from present-day observations: sea-ice edges sit at annual mean air temperatures of about −1 to −5 °C, ice-sheet margins near −8 °C; the model uses −1 °C for sea ice, at the warm end of that range, and consequently has somewhat more sea ice than today (edge at ~58° rather than ~62°). One planetary albedo, 0.65, is used for all ice. The exit from the frozen state occurs at ~0.25 bar of CO₂; published estimates range from 0.1 to over 0.3 bar depending on ice albedo and dust. Under full ice cover the model's weathering is zero: there is no exposed rock and, on a frozen planet, almost no rain. Half of volcanic CO₂ enters the ocean rather than the air. With 10% of the ice-covered ocean still exchanging gas through cracks and thin ice, the ocean stays close to equilibrium with the air and simply holds a third of the added carbon, which makes the frozen interval about 1.5× longer than if all volcanic CO₂ went to the air (~16 Myr in the scenario). A perfectly sealed ocean would store the submarine half entirely, doubling the interval and releasing the stored CO₂ when the ice breaks; how leaky the ice was is not known.</p>
 </section>
+<footer class="foot">
+  <span>Made by Judith Hubbard · <a href="https://earthquakeinsights.substack.com" data-ev="earthquake-insights">Earthquake Insights</a> · <a href="https://earthquakeinsights.com/unusual/" data-ev="unusual-earthquakes">Unusual earthquakes</a></span>
+  <span>Other projects: <a href="https://judithhubbard.github.io/iceages/" data-ev="iceages">Orbital cycles and ice ages</a> · <a href="https://statebilltracker.org" data-ev="state-bill-tracker">State Bill Tracker</a></span>
+</footer>
 
 <script>
 // Latitude-band energy balance model with land/ocean, ice-albedo feedback,
@@ -794,5 +814,32 @@
   M.equilibrate(st, 300); resetHistory(); pushHistory(); draw();
   mark('data-scn', 'modern'); mark('data-preset', 'modern');
   requestAnimationFrame(frame);
+})();
+</script>
+<script>
+// GoatCounter events: each interaction is counted at most once per page load
+(() => {
+  const done = new Set();
+  const count = (name, tries = 0) => {
+    if (done.has(name)) return;
+    if (window.goatcounter?.count) { done.add(name); try { window.goatcounter.count({ path: name, title: name, event: true }); } catch (e) {} return; }
+    if (document.querySelector("script[data-goatcounter]") && tries < 6) setTimeout(() => count(name, tries + 1), 2000);
+  };
+  document.addEventListener("click", (ev) => {
+    const a = ev.target.closest?.("a[data-ev]"); if (a) return count("link/" + a.dataset.ev);
+    const b = ev.target.closest?.("button"); if (!b) return;
+    if (b.id === "btnRun") return count("pause");
+    if (b.dataset.scn) return count("scenario/" + b.dataset.scn);
+    if (b.dataset.restart) return count("restart/" + b.dataset.restart);
+    if (b.dataset.preset) return count("continents/" + b.dataset.preset);
+  }, true);
+  const sliders = { solar: "slider/sun", co2: "slider/co2", volc: "slider/volcanic", basalt: "slider/basalt" };
+  document.addEventListener("change", (ev) => {
+    const t = ev.target; if (sliders[t.id]) return count(sliders[t.id]);
+    if (t.name === "speed") return count("speed/" + t.value);
+  }, true);
+  document.getElementById("map")?.addEventListener("pointerdown", () => count("map-edit"));
+  const eq = document.querySelector("section.eqs");
+  if (eq) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { count("reached/equations"); io.disconnect(); } }); io.observe(eq); }
 })();
 </script>
